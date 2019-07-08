@@ -33,7 +33,6 @@ class MeiSlicer(object):
             provided a EMA expression of measures, staves, and beats."""
 
         # if highlighting, create annot
-        print(self.ema_exp.completenessOptions)
         if "highlight" in self.ema_exp.completenessOptions:
             # create annotation element for highlights
             last_score_el = self.doc.getElementsByName("score")[-1]
@@ -42,7 +41,7 @@ class MeiSlicer(object):
             annot.addAttribute("plist", "")
             last_score_el.addChild(annot)
 
-            self.highlight_el = annot;
+            self.highlight_el = annot
 
         # parse general beats information
         self.beatsInfo = self.docInfo["beats"]
@@ -313,104 +312,6 @@ class MeiSlicer(object):
 
                                     # continue
                                     cur_beat += dur
-
-                        # select elements affecting the staff occurring
-                        # within beat range
-                        for event in around:
-                            if not marked_as_selected.get(event):
-                                if event.hasAttribute("tstamp"):
-                                    ts = float(event.getAttribute("tstamp").getValue())
-                                    if ts < 1 and "cut" not in self.ema_exp.completenessOptions:
-                                        ts = 1
-                                    ts2_att = None
-                                    if event.hasAttribute("tstamp2"):
-                                        ts2_att = event.getAttribute("tstamp2")
-                                    if ts > tstamp_final or (not ts2_att and ts < tstamp_first):
-                                        marked_for_removal.add(event)
-                                    elif ts2_att:
-                                        ts2 = ts2_att.getValue()
-                                        if "+" not in ts2:
-                                            if ts2 < tstamp_first:
-                                                marked_for_removal.add(event)
-                                            elif ts2 == tstamp_final:
-                                                marked_as_selected.add(event)
-                                                marked_for_removal.discard(event)
-                                            if ts < tstamp_first and ts2 >= tstamp_final:
-                                                marked_as_selected.add(event)
-                                                marked_for_removal.discard(event)
-                                            else:
-                                                marked_for_removal.add(event)
-                                        else:
-                                            marked_as_selected.add(event)
-                                    else:
-                                        marked_as_selected.add(event)
-
-                                elif event.hasAttribute("startid"):
-                                    startid = (
-                                        event.getAttribute("startid")
-                                        .getValue()
-                                        .replace("#", "")
-                                    )
-                                    target = self.doc.getElementById(startid)
-                                    if not target:
-                                        msg = """Unsupported Encoding: attribute
-                                        startid on element {0} does not point to any
-                                        element in the document.""".format(
-                                            event.getName())
-                                        raise UnsupportedEncoding(
-                                            re.sub(r'\s+', ' ', msg.strip()))
-                                    # Make sure the target event is in the same measure
-                                    event_m = event.getAncestor("measure").getId()
-                                    target_m = target.getAncestor("measure").getId()
-                                    if not event_m == target_m:
-                                        msg = """Unsupported Encoding: attribute
-                                        startid on element {0} does not point to an
-                                        element in the same measure.""".format(
-                                            event.getName())
-                                        raise UnsupportedEncoding(
-                                            re.sub(r'\s+', ' ', msg.strip()))
-                                    else:
-                                        if marked_as_selected.get(target):
-                                            marked_as_selected.add(event)
-                                            marked_for_removal.discard(event)
-                                        elif not event.hasAttribute("endid"):
-                                            marked_for_removal.add(event)
-                                        else:
-                                            # Skip if event starts after latest
-                                            # selected element with duration
-                                            pos = target.getPositionInDocument()
-                                            is_ahead = False
-                                            for i in reversed(marked_as_selected.getElements()):
-                                                if i.hasAttribute("dur"):
-                                                    if pos > i.getPositionInDocument():
-                                                        marked_for_removal.add(event)
-                                                        is_ahead = True
-                                                    break
-
-                                            if not is_ahead:
-                                                # last chance to keep it:
-                                                # must start before and end after
-                                                # latest selected element with duration
-
-                                                endid = (
-                                                    event.getAttribute("endid")
-                                                    .getValue()
-                                                    .replace("#", "")
-                                                )
-                                                target2 = self.doc.getElementById(endid)
-                                                if marked_as_selected.get(target2):
-                                                    marked_as_selected.add(event)
-                                                    marked_for_removal.discard(event)
-                                                else:
-                                                    pos2 = target2.getPositionInDocument()
-                                                    for i in reversed(marked_as_selected.getElements()):
-                                                        if i.hasAttribute("dur"):
-                                                            if pos2 > i.getPositionInDocument():
-                                                                marked_as_selected.add(event)
-                                                                marked_for_removal.discard(event)
-                                                            else:
-                                                                marked_for_removal.add(event)
-                                                            break
 
                     # Remove elements marked for removal
                     if "highlight" not in self.ema_exp.completenessOptions:
